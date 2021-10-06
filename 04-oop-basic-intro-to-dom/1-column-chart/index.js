@@ -1,14 +1,19 @@
 export default class ColumnChart {
   chartHeight = 50;
 
-  constructor({ data = [], label = '', value = 0, link = '' }) {
+  constructor({
+    data = [],
+    label = '',
+    value = 0,
+    link = '',
+    formatHeading = data => data
+  } = {}) {
     this.data = data;
     this.label = label;
-    this.value = value;
+    this.value = formatHeading(value);
     this.link = link;
 
     this.render();
-    this.initEventListeners();
   }
 
   getLinkTemplate () {
@@ -18,20 +23,24 @@ export default class ColumnChart {
   getColumns () {
     const maxValue = Math.max(...this.data);
     const scale = this.chartHeight / maxValue;
-    return this.data.map(item => `<div style="--value: ${String(Math.floor(item * scale))}" data-tooltip="${(item / maxValue * 100).toFixed(0) + '%'}"></div>`);
+    return this.data.map(item => {
+      const percent = (item / maxValue * 100).toFixed(0) + '%'
+      return `<div style="--value: ${String(Math.floor(item * scale))}" data-tooltip="${percent}"></div>`
+    })
+      .join('');
   }
 
-  getTemplate () {
+  get template () {
     return `
-      <div class="column-chart" style="--chart-height: ${this.chartHeight}">
+      <div class="column-chart ${!this.data.length ? 'column-chart_loading' : ''}" style="--chart-height: ${this.chartHeight}">
       <div class="column-chart__title">
-        ${this.label}
+        Total ${this.label}
         ${this.link ? this.getLinkTemplate() : ''}
       </div>
       <div class="column-chart__container">
         <div data-element="header" class="column-chart__header">${this.value}</div>
         <div data-element="body" class="column-chart__chart">
-          ${this.getColumns().join('')}
+          ${this.getColumns()}
         </div>
       </div>
     </div>
@@ -41,7 +50,7 @@ export default class ColumnChart {
   render() {
     const element = document.createElement('div'); // (*)
 
-    element.innerHTML = this.getTemplate();
+    element.innerHTML = this.template;
 
     // NOTE: в этой строке мы избавляемся от обертки-пустышки в виде `div`
     // который мы создали на строке (*)
